@@ -1,62 +1,35 @@
-*This is a documentation for a fictional project, just to show you what I expect. Notice a few key properties:*
-- *no cover page, really*
-- *no copy&pasted assignment text*
-- *no code samples*
-- *concise, to the point, gets me a quick overview of what was done and how*
-- *I don't really care about the document length*
-- *I used links where appropriate*
+ # Zobrazovanie dopravných nehôd - Dokumentácia
+ 
+ Aplikácia zobrazuje nehody v meste Des Moines štátu Iowa. Aplikácia umožňuje:
+ - zadať počiatočný a koncový bod a na vyhľadanej ceste nájsť všetky autonehody
+ - podľa počtu autonehôd farebne zvýrazniť kritickosť cesti vo vzťahu k autonehodám
+ - zobraziť šatistický prehľad, ktorý informuje o:
+    - dĺžde trasy
+    - počte nehôd (rozlišuje medzi smrteĺnými a ľahkými nehodami)
+    - počte nehôd na križovatkách
+    - počte križovatiek
+    - počte autonehôd na km
+    
+Aplikácia je vytvorená ako webová aplikácia, zložená z klientskej a serverovej časti. 
 
-# Overview
+# Klientská časť
+Klientská časť je realizovaná jednou statickou html stránkou (index.html), ktorá je rozdelená na dve časti. Prvá obsahuje formulár pre zadávanie vstupných údajov, resp. obsahuje tabuľku s výsledkami. Na vytvorenie tejto časti boli použité technológie HTML, CSS (bootstrap), ruby a javascript. 
+Druhá časť statickej stránky zobrazuje mapu, ktorá je vytvorená pomocou mapbox.js. Zdrojom dát pre zobrazovanie autonehôd je geojson (na adrese /index.json), ktorý je vytvorený na serverovskov stranou aplikácie. 
 
-This application shows hotels in Bratislava on a map. Most important features are:
-- search by proximity to my current location
-- search by hotel name
-- intelligent ordering - by proximity and by hotel features
-- hotels on the map are color coded by their quality assigned in stars (standard)
+# Serverovská časť
+Serverovská časť je vytvorená pomocou rámca Ruby on Rails, ktorý pracuje nad databázovým systém postgres, ktorý je rozšírený o posgis. Pre prácu s geografickými objektami bol použitý gem RGeo. Geojson, ktorý je zobrazovaný klienskou časťou vytvára jbuilder. Serverovská časť využíva aj externú api pre vytvorenie trasy z počiatočného bodu ku koncovému. Celá komunikácia s touto API službou je realizovaná v triedou Direction (/lib/direction.rb). Všetky spúšťané queries (komunikácia s databázou) sú poskytované triedou MyGeoQuery (/lib/queries.rb). 
 
-This is it in action:
+# Data
+Data boli získané z dvoch zdrojov. Prvým bol Open Street Maps, ktorý bol zdrojom dát pre jedntolivé cestné komunikácie. Druhým zdrojom bola stránka https://catalog.data.gov/dataset/crash-data, ktorá obsahovala informácie o autonehodách v štáte Iowa. Pre import dát z Open Street Maps bol použítý nástroj osm2pgsql, ktorý vytvoril niekoľko tabuliek s geodátami. Pre potreby aplikácie bola použitá len tabuľka planet.osm.roads. Dáta o autonehodách boli v csv, ktorý bol imporotovaný do databázy pomocou skriptu. 
+
+# API
+Aplikácia poskytuje jednu REST službu (API), ktorá umožňuje zobraziť všetky autonehody na vyhľadanej ceste pre vybrané roky a na základe zvolených dostupných zobrazovacích kitérií:
+`/tmp?sourceLat=41.57151997231558&sourceLong=-93.61454486846924&destLat=41.570187552463736&destLong=-93.61364364624023&year2013=true&year2014=true&year2015=true&showCrashes=1`
+
+Odpoveďou na volanie API je vytvorený geojson pomocou jbuildera, ktorý okrem jednotlivých nehôd obsahuje aj trasu zo začiatočného bodu do koncového.
+
 
 ![Screenshot](screenshot.png)
 
-The application has 2 separate parts, the client which is a [frontend web application](#frontend) using mapbox API and mapbox.js and the [backend application](#backend) written in [Rails](http://rubyonrails.org/), backed by PostGIS. The frontend application communicates with backend using a [REST API](#api).
 
-# Frontend
 
-The frontend application is a static HTML page (`index.html`), which shows a mapbox.js widget. It is displaying hotels, which are mostly in cities, thus the map style is based on the Emerald style. I modified the style to better highlight main sightseeing points, restaurants and bus stops, since they are all important when selecting a hotel. I also highlighted rails tracks to assist in finding a quiet location.
-
-All relevant frontend code is in `application.js` which is referenced from `index.html`. The frontend code is very simple, its only responsibilities are:
-- detecting user's location, using the standard [web location API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/Using_geolocation)
-- displaying the sidebar panel with hotel list and filtering controls, driving the user interaction and calling the appropriate backend APIs
-- displaying geo features by overlaying the map with a geojson layer, the geojson is provided directly by backend APIs
-
-# Backend
-
-The backend application is written in Ruby on Rails and is responsible for querying geo data, formatting the geojson and data for the sidebar panel.
-
-## Data
-
-Hotel data is coming directly from Open Street Maps. I downloaded an extent covering whole Slovakia (around 1.2GB) and imported it using the `osm2pgsql` tool into the standard OSM schema in WGS 84 with hstore enabled. To speedup the queries I created an index on geometry column (`way`) in all tables. The application follows standard Rails conventions and all queries are placed in models inside `app/models`, mostly in `app/models/hotel.rb`. GeoJSON is generated by using a standard `st_asgeojson` function, however some postprocessing is necessary (in `app/controllers/search_controller.rb`) in order to merge all hotels into a single geojson.
-
-## Api
-
-**Find hotels in proximity to coordinates**
-
-`GET /search?lat=25346&long=46346123`
-
-**Find hotels by name, sorted by proximity and quality**
-
-`GET /search?name=hviezda&lat=25346&long=46346123`
-
-### Response
-
-API calls return json responses with 2 top-level keys, `hotels` and `geojson`. `hotels` contains an array of hotel data for the sidebar, one entry per matched hotel. Hotel attributes are (mostly self-evident):
-```
-{
-  "name": "Modra hviezda",
-  "style": "modern", # cuisine style
-  "stars": 3,
-  "address": "Panska 31"
-  "image_url": "/assets/hotels/652.png"
-}
-```
-`geojson` contains a geojson with locations of all matched hotels and style definitions.
