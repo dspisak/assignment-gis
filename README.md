@@ -20,8 +20,14 @@ Build a map-based application, which lets the user see geo-based data on a map a
 
 Fill in (either in English, or in Slovak):
 
-**Application description**: `<fill in>`
+**Application description**:
+Aplikácia umožňuje zobraziť autonehody na vyhľadanej strase zo zadaného počiatočného bodu do koncového. Poďla počtu nehôd je následne trasa zafarbená (červená, žltá, zelená). Okrem grafického zobrazenia aplikácia ponúka aj strušné štatistiky trasy v tabuľke.
 
-**Data source**: `<fill in>`
+**Data source**:
+- [Open Street Maps](https://www.openstreetmap.org/)
+- https://catalog.data.gov/dataset/crash-data
 
-**Technologies used**: `<fill in>`
+**Technologies used**:
+- postgress + postgis
+- ruby on rails
+- bootstrap
