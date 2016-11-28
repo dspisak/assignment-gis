@@ -28,3 +28,4 @@ Aplikácia poskytuje jednu REST službu (API), ktorá umožňuje zobraziť všet
 
 Odpoveďou na volanie API je vytvorený geojson pomocou jbuildera, ktorý okrem jednotlivých nehôd obsahuje aj trasu zo začiatočného bodu do koncového.
 
+![Screenshot](screenshot.png)
